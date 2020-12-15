@@ -8,7 +8,7 @@ const path = require('path');
 const fs = require('fs');
 
 // We have to tell AdminBro that we will manage mongoose resources with it
-const canModifyUsers = ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin'
+const canModifyUsers = ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin'
 
 let visibleItems;
 
@@ -110,10 +110,10 @@ const adminBro = new AdminBro({
                         }
                         return request
                     },
-                    isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin',
+                    isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin',
                 },
-                edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.role === 'admin' || currentAdmin._id === record.param('_id'))},
-                delete: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin', },
+                edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.perfil === 'admin' || currentAdmin._id === record.param('_id')) },
+                delete: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin', },
                 list: {
                     before: async (request, context) => {
                         const { currentAdmin } = context
@@ -121,7 +121,7 @@ const adminBro = new AdminBro({
                             ...request,
                             query: {
                                 ...request.query,
-                                'filters._id': currentAdmin.role === 'admin' ? '' : currentAdmin._id,
+                                'filters._id': currentAdmin.perfil === 'admin' ? '' : currentAdmin._id,
                             }
                         }
                     },
@@ -155,14 +155,9 @@ const adminBro = new AdminBro({
                 ownerId: {
                     isVisible: { filter: true, show: false, edit: false, list: false },
                 },
-                // status: {
-                //     isVisible: { filter: true, show: true, edit: canModifyUsers, list: true },
-                //     // isVisible: ({ currentAdmin }) => currentAdmin && (currentAdmin.role === 'admin')
-
-                // }
             },
             editProperties: visibleItems,
-            
+
             actions: {
                 new: {
                     before: async (request, context) => {
@@ -201,15 +196,15 @@ const adminBro = new AdminBro({
                         return response;
                     }
                 },
-                // edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.role === 'admin' || currentAdmin._id === record.param('ownerId')) },
-                edit: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin' },
+                // edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.perfil === 'admin' || currentAdmin._id === record.param('ownerId')) },
+                edit: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin' },
                 show: {
-                    isVisible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.role === 'admin' || currentAdmin._id === record.param('ownerId')),
+                    isVisible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.perfil === 'admin' || currentAdmin._id === record.param('ownerId')),
                 },
                 list: {
                     before: async (request, context) => {
                         const { currentAdmin } = context
-                        if(currentAdmin.role === 'admin'){
+                        if (currentAdmin.perfil === 'admin') {
                             visibleItems = ["texto", "anexo", "baseDeDados", "status"];
                         } else {
                             visibleItems = ["texto", "anexo", "baseDeDados"];
@@ -218,7 +213,7 @@ const adminBro = new AdminBro({
                             ...request,
                             query: {
                                 ...request.query,
-                                'filters.ownerId': currentAdmin.role === 'admin' ? '' : currentAdmin._id,
+                                'filters.ownerId': currentAdmin.perfil === 'admin' ? '' : currentAdmin._id,
                             }
                         }
 
@@ -228,7 +223,7 @@ const adminBro = new AdminBro({
                 delete: {
                     isAccessible: ({ currentAdmin, record }) => {
                         return currentAdmin && (
-                            currentAdmin.role === 'admin'
+                            currentAdmin.perfil === 'admin'
                             || currentAdmin._id === record.param('ownerId')
                         )
                     }
@@ -259,14 +254,16 @@ const router = AdminBroExpressjs.buildAuthenticatedRouter(adminBro, {
     cookiePassword: 'some-secret-password-used-to-secure-cookie',
 })
 
+
+// const router = AdminBroExpressjs.buildRout(adminBro)
+
 app.use(adminBro.options.rootPath, router)
 app.use('/uploads', express.static('uploads'));
 
 // Running the server
 const run = async () => {
-    await mongoose.connect('mongodb://localhost:27017/test', { useNewUrlParser: true })
+    await mongoose.connect('mongodb+srv://admin:admin@cluster0.op2dm.mongodb.net/mktmessenger?retryWrites=true&w=majority', { useNewUrlParser: true })
     await app.listen(8080, () => console.log(`ON! :)`))
-
 }
 
 run();

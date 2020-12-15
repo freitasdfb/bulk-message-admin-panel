@@ -1,32 +1,29 @@
 const mongoose = require('mongoose');
 
-
-const WppMessageSchema = mongoose.model('wppMessage', {
+const WppMessageSchema = new mongoose.Schema({
   texto: {
-      type: String,
-      required: true,
+    type: String,
+    required: true,
   },
+
   anexo: {
-      type: String,
-      required: false,
+    type: String,
+    required: false,
   },
 
   baseDeDados: {
-      type: String,
-      required: false,
-  },
-  localAEnviar: {
-      type: String,
+    type: String,
+    required: false,
   },
 
-  status: {
-      type: String,
-      enum: ['aguardando', 'executando', 'executada']
+  localAEnviar: {
+    type: String,
   },
   ownerId: {
-      type: String
+    type: mongoose.Types.ObjectId,
+    ref: 'wppMessage',
   }
-})
+});
 
 const WppMessage = mongoose.model('wppMessage', WppMessageSchema);
 
