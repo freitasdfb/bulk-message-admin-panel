@@ -8,6 +8,10 @@ const path = require('path');
 const fs = require('fs');
 
 // We have to tell AdminBro that we will manage mongoose resources with it
+const canModifyUsers = ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin'
+
+let visibleItems;
+
 AdminBro.registerAdapter(require('admin-bro-mongoose'))
 
 const sidebarGroups = {
@@ -74,19 +78,11 @@ const WppMessage = mongoose.model('wppMessage', {
     }
 })
 
-// const canEditCars = ({ currentAdmin, record }) => {
-//     return currentAdmin && (
-//         currentAdmin.role === 'admin'
-//         || currentAdmin._id === record.param('ownerId')
-//     )
-// }
-// const canModifyUsers = ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin'
-
 const adminBro = new AdminBro({
     branding: {
         companyName: 'MKT Messenger',
         softwareBrothers: false,
-        language: 'pt-br'
+        language: 'pt'
     },
     resources: [{
         resource: User,
@@ -116,8 +112,20 @@ const adminBro = new AdminBro({
                     },
                     isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin',
                 },
-                edit: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin', },
-                delete: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin', }
+                edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.role === 'admin' || currentAdmin._id === record.param('_id'))},
+                delete: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin', },
+                list: {
+                    before: async (request, context) => {
+                        const { currentAdmin } = context
+                        return {
+                            ...request,
+                            query: {
+                                ...request.query,
+                                'filters._id': currentAdmin.role === 'admin' ? '' : currentAdmin._id,
+                            }
+                        }
+                    },
+                },
             },
             parent: sidebarGroups.user
         }
@@ -138,15 +146,23 @@ const adminBro = new AdminBro({
                     isVisible: { edit: true, list: true, show: true, filter: false }
                 },
                 baseDeDados: {
-                    isVisible: { edit: true, list: false, show: false, filter: true }
+                    type: 'textarea',
+                    isVisible: { edit: true, list: false, show: false, filter: true },
+                    components: {
+                        edit: AdminBro.bundle('./Components/baseDeDados-edit.tsx')
+                    }
                 },
                 ownerId: {
                     isVisible: { filter: true, show: false, edit: false, list: false },
                 },
-                status: {
-                    isVisible: { filter: true, show: true, edit: true, list: true }
-                }
+                // status: {
+                //     isVisible: { filter: true, show: true, edit: canModifyUsers, list: true },
+                //     // isVisible: ({ currentAdmin }) => currentAdmin && (currentAdmin.role === 'admin')
+
+                // }
             },
+            editProperties: visibleItems,
+            
             actions: {
                 new: {
                     before: async (request, context) => {
@@ -185,16 +201,19 @@ const adminBro = new AdminBro({
                         return response;
                     }
                 },
-                // edit:{isAccessible: isAccessGranted({ resourceName: 'wppMessage', actionRequested: 'edit' }),}S
                 // edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.role === 'admin' || currentAdmin._id === record.param('ownerId')) },
-                // edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.role === 'admin' || currentAdmin._id === record.param('ownerId')) },
-                edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && currentAdmin.role === 'admin' },
+                edit: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.role === 'admin' },
                 show: {
                     isVisible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.role === 'admin' || currentAdmin._id === record.param('ownerId')),
                 },
                 list: {
                     before: async (request, context) => {
                         const { currentAdmin } = context
+                        if(currentAdmin.role === 'admin'){
+                            visibleItems = ["texto", "anexo", "baseDeDados", "status"];
+                        } else {
+                            visibleItems = ["texto", "anexo", "baseDeDados"];
+                        }
                         return {
                             ...request,
                             query: {
@@ -203,7 +222,6 @@ const adminBro = new AdminBro({
                             }
                         }
 
-                        console.log(request.query)
                     },
                 },
 
@@ -247,7 +265,8 @@ app.use('/uploads', express.static('uploads'));
 // Running the server
 const run = async () => {
     await mongoose.connect('mongodb://localhost:27017/test', { useNewUrlParser: true })
-    await app.listen(8080, () => console.log(`Example app listening on port 8080!`))
+    await app.listen(8080, () => console.log(`ON! :)`))
+
 }
 
 run();

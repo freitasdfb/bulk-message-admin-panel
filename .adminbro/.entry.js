@@ -5,3 +5,5 @@ import Component2 from '../components/anexo-list'
 AdminBro.UserComponents.Component2 = Component2
 import Component3 from '../components/anexo-show'
 AdminBro.UserComponents.Component3 = Component3
+import Component4 from '../Components/baseDeDados-edit'
+AdminBro.UserComponents.Component4 = Component4

@@ -1,5 +1,6 @@
 import React from 'react'
-import { Box, BasePropertyProps } from 'admin-bro'
+import { BasePropertyProps } from 'admin-bro';
+import { Box } from '@admin-bro/design-system';
 
 const Show: React.FC<BasePropertyProps> = (props) => {
     const { record } = props

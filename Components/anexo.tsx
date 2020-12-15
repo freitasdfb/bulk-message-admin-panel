@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Label, DropZone, BasePropertyProps, DropZoneProps } from 'admin-bro'
+import { BasePropertyProps } from 'admin-bro';
+import { Box, Label, DropZone, DropZoneProps } from '@admin-bro/design-system'
 
 const Edit: React.FC<BasePropertyProps> = (props) => {
 
