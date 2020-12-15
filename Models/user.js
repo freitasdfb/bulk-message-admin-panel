@@ -1,12 +1,11 @@
 /* eslint-disable linebreak-style */
 const mongoose = require('mongoose');
 
-const UserSchema = new mongoose.Schema({
+const User = new mongoose.Schema('User', {
     nome: {
         type: String,
         required: true,
     },
-
     email: {
         type: String,
         required: true,
@@ -17,10 +16,10 @@ const UserSchema = new mongoose.Schema({
     },
     perfil: {
         type: String,
-        enum: ['admin', 'user'],
+        enum: ['usuario', 'admin'],
         required: true,
     }
-});
+})
 
 const User = mongoose.model('User', UserSchema);
 
