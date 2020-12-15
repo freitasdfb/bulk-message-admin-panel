@@ -140,8 +140,8 @@ const adminBro = new AdminBro({
                 anexo: {
                     components: {
                         edit: AdminBro.bundle('./Components/anexo.tsx'),
-                        list: AdminBro.bundle('./components/anexo-list.tsx'),
-                        show: AdminBro.bundle('./components/anexo-show.tsx')
+                        show: AdminBro.bundle('./Components/anexo-show.tsx'),
+                        list: AdminBro.bundle('./Components/anexo-list.tsx'),
                     },
                     isVisible: { edit: true, list: true, show: true, filter: false }
                 },
