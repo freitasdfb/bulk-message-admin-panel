@@ -263,7 +263,7 @@ app.use('/uploads', express.static('uploads'));
 // Running the server
 const run = async () => {
     await mongoose.connect('mongodb+srv://admin:admin@cluster0.op2dm.mongodb.net/mktmessenger?retryWrites=true&w=majority', { useNewUrlParser: true })
-    await app.listen(8080, () => console.log(`ON! :)`))
+    await app.listen(process.env.PORT || 8080, () => console.log(`ON! :)`))
 }
 
 run();
