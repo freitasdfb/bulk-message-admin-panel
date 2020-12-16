@@ -6,11 +6,11 @@ const AdminBroExpressjs = require('admin-bro-expressjs')
 const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config()
 
 // We have to tell AdminBro that we will manage mongoose resources with it
 const canModifyUsers = ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin'
 
-let visibleItems;
 
 AdminBro.registerAdapter(require('admin-bro-mongoose'))
 
@@ -156,7 +156,6 @@ const adminBro = new AdminBro({
                     isVisible: { filter: true, show: false, edit: false, list: false },
                 },
             },
-            editProperties: visibleItems,
 
             actions: {
                 new: {
@@ -203,12 +202,6 @@ const adminBro = new AdminBro({
                 },
                 list: {
                     before: async (request, context) => {
-                        const { currentAdmin } = context
-                        if (currentAdmin.perfil === 'admin') {
-                            visibleItems = ["texto", "anexo", "baseDeDados", "status"];
-                        } else {
-                            visibleItems = ["texto", "anexo", "baseDeDados"];
-                        }
                         return {
                             ...request,
                             query: {
@@ -262,7 +255,7 @@ app.use('/uploads', express.static('uploads'));
 
 // Running the server
 const run = async () => {
-    await mongoose.connect('mongodb+srv://admin:admin@cluster0.op2dm.mongodb.net/mktmessenger?retryWrites=true&w=majority', { useNewUrlParser: true })
+    await mongoose.connect(process.env.MONGO_DB, { useNewUrlParser: true })
     await app.listen(process.env.PORT || 8080, () => console.log(`ON! :)`))
 }
 
