@@ -278,7 +278,7 @@ const adminBro = new AdminBro({
                 },
                 
             },
-            editProperties: ["texto", "anexo", "baseDeDados", "status"]
+            editProperties: ["texto", "anexo", "baseDeDados", "status"],
             parent: sidebarGroups.products
         }
     },
