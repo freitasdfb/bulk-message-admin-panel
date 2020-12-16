@@ -87,6 +87,7 @@ const adminBro = new AdminBro({
     resources: [{
         resource: User,
         options: {
+            id: 'userforadmin',
             properties: {
                 encryptedPassword: {
                     isVisible: false,
@@ -125,8 +126,62 @@ const adminBro = new AdminBro({
                             }
                         }
                     },
+                    isAcessible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin',
+                    isVisible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin',
                 },
             },
+            editProperties: ["nome","email", "password", "perfil"],
+            parent: sidebarGroups.user
+        }
+    },
+    {
+        resource: User,
+        options: {
+            id: 'userforuser',
+            properties: {
+                encryptedPassword: {
+                    isVisible: false,
+                },
+                password: {
+                    type: 'password',
+                    isVisible: {
+                        list: false, edit: true, filter: false, show: false,
+                    },
+                },
+            },
+            actions: {
+                new: {
+                    before: async (request) => {
+                        if (request.payload.password) {
+                            request.payload = {
+                                ...request.payload,
+                                encryptedPassword: await bcrypt.hash(request.payload.password, 10),
+                                password: undefined,
+                            }
+                        }
+                        return request
+                    },
+                    isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin',
+                },
+                edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.perfil === 'admin' || currentAdmin._id === record.param('_id')) },
+                delete: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin', },
+                list: {
+                    before: async (request, context) => {
+                        const { currentAdmin } = context
+                        return {
+                            ...request,
+                            query: {
+                                ...request.query,
+                                'filters._id': currentAdmin.perfil === 'admin' ? '' : currentAdmin._id,
+                            }
+                        }
+                    },
+                    isAcessible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'usuario',
+                    isVisible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'usuario',
+                },
+            },
+            editProperties: ["nome","email", "password"],
+            listProperties: ["nome","email"],
             parent: sidebarGroups.user
         }
     },
@@ -220,9 +275,10 @@ const adminBro = new AdminBro({
                             || currentAdmin._id === record.param('ownerId')
                         )
                     }
-                }
-
+                },
+                
             },
+            editProperties: ["texto", "anexo", "baseDeDados", "status"]
             parent: sidebarGroups.products
         }
     },
@@ -244,7 +300,7 @@ const router = AdminBroExpressjs.buildAuthenticatedRouter(adminBro, {
         }
         return false
     },
-    cookiePassword: 'some-secret-password-used-to-secure-cookie',
+    cookiePassword: process.env.COOKIE_PASSWD,
 })
 
 
@@ -255,7 +311,7 @@ app.use('/uploads', express.static('uploads'));
 
 // Running the server
 const run = async () => {
-    await mongoose.connect(process.env.MONGO_DB, { useNewUrlParser: true })
+    await mongoose.connect(process.env.MONGO_DB, { useNewUrlParser: true, useUnifiedTopology: true })
     await app.listen(process.env.PORT || 8080, () => console.log(`ON! :)`))
 }
 
