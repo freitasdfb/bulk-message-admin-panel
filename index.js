@@ -130,7 +130,7 @@ const adminBro = new AdminBro({
                     isVisible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin',
                 },
             },
-            editProperties: ["nome","email", "password", "perfil"],
+            editProperties: ["nome", "email", "password", "perfil"],
             parent: sidebarGroups.user
         }
     },
@@ -180,14 +180,15 @@ const adminBro = new AdminBro({
                     isVisible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'usuario',
                 },
             },
-            editProperties: ["nome","email", "password"],
-            listProperties: ["nome","email"],
+            editProperties: ["nome", "email", "password"],
+            listProperties: ["nome", "email"],
             parent: sidebarGroups.user
         }
     },
     {
         resource: WppMessage,
         options: {
+            id: 'messageForAdmin',
             properties: {
                 texto: {
                     type: 'richtext'
@@ -211,7 +212,6 @@ const adminBro = new AdminBro({
                     isVisible: { filter: true, show: false, edit: false, list: false },
                 },
             },
-
             actions: {
                 new: {
                     before: async (request, context) => {
@@ -257,6 +257,107 @@ const adminBro = new AdminBro({
                 },
                 list: {
                     before: async (request, context) => {
+                        const { currentAdmin } = context
+                        return {
+                            ...request,
+                            query: {
+                                ...request.query,
+                                'filters.ownerId': currentAdmin.perfil === 'admin' ? '' : currentAdmin._id,
+                            }
+                        }
+
+                    },
+                    
+                },
+
+                delete: {
+                    isAccessible: ({ currentAdmin, record }) => {
+                        return currentAdmin && (
+                            currentAdmin.perfil === 'admin'
+                            || currentAdmin._id === record.param('ownerId')
+                        )
+                    }
+                },
+
+            },
+            editProperties: ["texto", "anexo", "baseDeDados", "status"],
+            listProperties: ["texto", "anexo", "baseDeDados", "status"],
+            parent: sidebarGroups.products
+        }
+    },
+    {
+        resource: WppMessage,
+        options: {
+            id: 'messageForUser',
+            properties: {
+                texto: {
+                    type: 'richtext'
+                },
+                anexo: {
+                    components: {
+                        edit: AdminBro.bundle('./Components/anexo.tsx'),
+                        show: AdminBro.bundle('./Components/anexo-show.tsx'),
+                        list: AdminBro.bundle('./Components/anexo-list.tsx'),
+                    },
+                    isVisible: { edit: true, list: true, show: true, filter: false }
+                },
+                baseDeDados: {
+                    type: 'textarea',
+                    isVisible: { edit: true, list: false, show: false, filter: true },
+                    components: {
+                        edit: AdminBro.bundle('./Components/baseDeDados-edit.tsx')
+                    }
+                },
+                ownerId: {
+                    isVisible: { filter: true, show: false, edit: false, list: false },
+                },
+            },
+            actions: {
+                new: {
+                    before: async (request, context) => {
+                        if (request.method === 'post') {
+                            const { anexo, ...otherParams } = request.payload;
+
+                            const { currentAdmin } = context;
+                            context.anexo = anexo;
+                            context.ownerId = currentAdmin._id;
+
+                            request.payload = {
+                                ...request.payload,
+                                otherParams,
+                                ownerId: currentAdmin._id,
+                                status: 'aguardando'
+                            }
+                        }
+                        return request;
+                    },
+
+                    after: async (response, request, context) => {
+                        const { record, anexo, ownerId } = context;
+
+                        if (record.isValid() && anexo) {
+                            const filePath = path.join('uploads', record.id().toString(), anexo.name);
+                            await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+                            await fs.promises.rename(anexo.path, filePath);
+                            await record.update({ anexo: `${anexo.name}` });
+
+                            response.record.params = {
+                                ...response.record.params,
+                                anexoPath: `${filePath}`,
+                                ownerId: ownerId
+                            }
+                        }
+                        return response;
+                    }
+                },
+                // edit: { isAccessible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.perfil === 'admin' || currentAdmin._id === record.param('ownerId')) },
+                edit: { isAccessible: ({ currentAdmin }) => currentAdmin && currentAdmin.perfil === 'admin' },
+                show: {
+                    isVisible: ({ currentAdmin, record }) => currentAdmin && (currentAdmin.perfil === 'admin' || currentAdmin._id === record.param('ownerId')),
+                },
+                list: {
+                    before: async (request, context) => {
+                        const { currentAdmin } = context
                         return {
                             ...request,
                             query: {
@@ -276,9 +377,10 @@ const adminBro = new AdminBro({
                         )
                     }
                 },
-                
+
             },
-            editProperties: ["texto", "anexo", "baseDeDados", "status"],
+            editProperties: ["texto", "anexo", "baseDeDados"],
+            listProperties: ["texto", "anexo", "baseDeDados", "status"],
             parent: sidebarGroups.products
         }
     },
